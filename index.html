@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real-Time Billing System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .product {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .product input {
+      flex: 1;
+    }
+    #bill {
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+      white-space: pre-wrap;
+    }
+    .btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Real-Time Billing System</h2>
+
+    <input type="text" id="username" placeholder="Enter your name">
+    <input type="number" id="password" placeholder="Enter password">
+
+    <button class="btn" onclick="login()">Login</button>
+
+    <div id="billingSection" style="display:none;">
+      <hr>
+      <div id="productList"></div>
+      <button class="btn" onclick="addProduct()">+ Add Product</button>
+
+      <input type="number" id="redeem" placeholder="Enter coins to redeem">
+      <button class="btn" onclick="generateBill()">Generate Bill</button>
+
+      <div id="bill"></div>
+    </div>
+  </div>
+
+  <script>
+    const users = [
+      { name: "chodhitha", password: 100, coins: 100 },
+      { name: "charvika", password: 200, coins: 70 },
+      { name: "mahesh", password: 300, coins: 90 },
+      { name: "shivani", password: 400, coins: 80 }
+    ];
+
+    let currentUser = null;
+
+    function login() {
+      const name = document.getElementById("username").value;
+      const pass = parseInt(document.getElementById("password").value);
+
+      currentUser = users.find(u => u.name === name && u.password === pass);
+
+      if (!currentUser) {
+        alert("Invalid credentials!");
+        return;
+      }
+
+      alert(`Welcome ${currentUser.name}! You have ${currentUser.coins} coins.`);
+      document.getElementById("billingSection").style.display = "block";
+      addProduct(); // add initial product field
+    }
+
+    function addProduct() {
+      const container = document.createElement("div");
+      container.className = "product";
+      container.innerHTML = `
+        <input type="text" placeholder="Product Name" class="pname">
+        <input type="number" placeholder="Price" class="pprice">
+        <input type="number" placeholder="Discount %" class="pdiscount">
+      `;
+      document.getElementById("productList").appendChild(container);
+    }
+
+    function generateBill() {
+      const names = document.querySelectorAll(".pname");
+      const prices = document.querySelectorAll(".pprice");
+      const discounts = document.querySelectorAll(".pdiscount");
+
+      let subtotal = 0;
+      let summary = "";
+
+      for (let i = 0; i < names.length; i++) {
+        const name = names[i].value;
+        const price = parseFloat(prices[i].value);
+        const discount = parseFloat(discounts[i].value);
+
+        if (!name || isNaN(price) || isNaN(discount)) continue;
+
+        const finalPrice = price - (price * discount / 100);
+        subtotal += finalPrice;
+
+        summary += `${i + 1}. ${name} | ₹${price} - ${discount}% = ₹${finalPrice.toFixed(2)}\n`;
+      }
+
+      const gst = subtotal * 0.10;
+      let total = subtotal + gst;
+
+      const redeem = parseInt(document.getElementById("redeem").value) || 0;
+
+      if (redeem > currentUser.coins) {
+        alert("You can't redeem more coins than you have!");
+      } else {
+        total -= redeem;
+        currentUser.coins -= redeem;
+        summary += `\n₹${redeem} redeemed using your coins.`;
+      }
+
+      summary += `\n\nSubtotal: ₹${subtotal.toFixed(2)}`;
+      summary += `\nGST (10%): ₹${gst.toFixed(2)}`;
+      summary += `\nFinal Amount: ₹${total.toFixed(2)}`;
+      summary += `\nRemaining Coins: ${currentUser.coins}`;
+
+      document.getElementById("bill").textContent = summary;
+    }
+  </script>
+</body>
+</html>
