@@ -2,29 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Real-Time Billing System</title>
+  <title>Mall Billing System with Existing Customers</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
+      background: #f0f0f0;
+      padding: 30px;
     }
     .container {
-      max-width: 600px;
+      max-width: 700px;
       background: #fff;
-      padding: 20px;
+      padding: 30px;
       border-radius: 10px;
       margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     h2 {
       text-align: center;
+      margin-bottom: 20px;
     }
     input, button {
-      padding: 10px;
-      margin: 5px 0;
+      padding: 12px;
+      margin: 8px 0;
       width: 100%;
       box-sizing: border-box;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
     .product {
       display: flex;
@@ -36,38 +39,50 @@
     }
     #bill {
       background: #f9f9f9;
-      padding: 10px;
+      padding: 20px;
       border-radius: 5px;
       margin-top: 20px;
       white-space: pre-wrap;
+      font-family: monospace;
+      border: 1px dashed #ccc;
     }
     .btn {
-      background: #007bff;
+      background: #28a745;
       color: white;
       border: none;
       cursor: pointer;
       border-radius: 5px;
     }
     .btn:hover {
-      background: #0056b3;
+      background: #218838;
+    }
+    #walletInfo {
+      font-weight: bold;
+      color: #333;
+      margin: 5px 0;
+    }
+    hr {
+      margin: 20px 0;
+    }
+    #billingSection {
+      display: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Real-Time Billing System</h2>
+    <h2>Mall Billing System</h2>
 
-    <input type="text" id="username" placeholder="Enter your name">
-    <input type="number" id="password" placeholder="Enter password">
+    <input type="text" id="customerName" placeholder="Enter Customer Name">
+    <button class="btn" onclick="continueCustomer()">Continue</button>
+    <div id="walletInfo"></div>
 
-    <button class="btn" onclick="login()">Login</button>
-
-    <div id="billingSection" style="display:none;">
+    <div id="billingSection">
       <hr>
       <div id="productList"></div>
       <button class="btn" onclick="addProduct()">+ Add Product</button>
 
-      <input type="number" id="redeem" placeholder="Enter coins to redeem">
+      <input type="number" id="redeem" placeholder="Enter coins to redeem (if any)">
       <button class="btn" onclick="generateBill()">Generate Bill</button>
 
       <div id="bill"></div>
@@ -75,29 +90,36 @@
   </div>
 
   <script>
-    const users = [
-      { name: "chodhitha", password: 100, coins: 100 },
-      { name: "charvika", password: 200, coins: 70 },
-      { name: "mahesh", password: 300, coins: 90 },
-      { name: "shivani", password: 400, coins: 80 }
-    ];
+    const users = ["chodhitha", "charvika", "mahesh", "shivani"];
+    let customers = {
+      "chodhitha": 200,
+      "charvika": 200,
+      "mahesh": 200,
+      "shivani": 200
+    };
+    let currentCustomer = null;
 
-    let currentUser = null;
-
-    function login() {
-      const name = document.getElementById("username").value;
-      const pass = parseInt(document.getElementById("password").value);
-
-      currentUser = users.find(u => u.name === name && u.password === pass);
-
-      if (!currentUser) {
-        alert("Invalid credentials!");
+    function continueCustomer() {
+      const name = document.getElementById("customerName").value.trim().toLowerCase();
+      if (!name) {
+        alert("Please enter a customer name.");
         return;
       }
 
-      alert(`Welcome ${currentUser.name}! You have ${currentUser.coins} coins.`);
+      if (!customers[name]) {
+        customers[name] = 50;
+        alert(`${name}, welcome! You've received 50 bonus coins in your wallet.`);
+      } else {
+        alert(`Welcome back, ${name}!`);
+      }
+
+      currentCustomer = name;
       document.getElementById("billingSection").style.display = "block";
-      addProduct(); // add initial product field
+      updateWalletInfo();
+    }
+
+    function updateWalletInfo() {
+      document.getElementById("walletInfo").textContent = `Available Coins: ${customers[currentCustomer]}`;
     }
 
     function addProduct() {
@@ -105,31 +127,41 @@
       container.className = "product";
       container.innerHTML = `
         <input type="text" placeholder="Product Name" class="pname">
-        <input type="number" placeholder="Price" class="pprice">
-        <input type="number" placeholder="Discount %" class="pdiscount">
+        <input type="number" placeholder="Price (₹)" class="pprice">
+        <input type="number" placeholder="Discount (%)" class="pdiscount">
       `;
       document.getElementById("productList").appendChild(container);
     }
 
     function generateBill() {
+      if (!currentCustomer) {
+        alert("Enter customer name first!");
+        return;
+      }
+
       const names = document.querySelectorAll(".pname");
       const prices = document.querySelectorAll(".pprice");
       const discounts = document.querySelectorAll(".pdiscount");
 
+      if (names.length === 0) {
+        alert("Add at least one product!");
+        return;
+      }
+
       let subtotal = 0;
-      let summary = "";
+      let billContent = `        Mall Receipt\n-----------------------------\nCustomer: ${currentCustomer}\nDate: ${new Date().toLocaleString()}\n-----------------------------\n`;
 
       for (let i = 0; i < names.length; i++) {
-        const name = names[i].value;
+        const productName = names[i].value;
         const price = parseFloat(prices[i].value);
         const discount = parseFloat(discounts[i].value);
 
-        if (!name || isNaN(price) || isNaN(discount)) continue;
+        if (!productName || isNaN(price) || isNaN(discount)) continue;
 
         const finalPrice = price - (price * discount / 100);
         subtotal += finalPrice;
 
-        summary += `${i + 1}. ${name} | ₹${price} - ${discount}% = ₹${finalPrice.toFixed(2)}\n`;
+        billContent += `${i+1}. ${productName}\n   ₹${price} - ${discount}% = ₹${finalPrice.toFixed(2)}\n`;
       }
 
       const gst = subtotal * 0.10;
@@ -137,21 +169,24 @@
 
       const redeem = parseInt(document.getElementById("redeem").value) || 0;
 
-      if (redeem > currentUser.coins) {
-        alert("You can't redeem more coins than you have!");
-      } else {
-        total -= redeem;
-        currentUser.coins -= redeem;
-        summary += `\n₹${redeem} redeemed using your coins.`;
+      if (redeem > customers[currentCustomer]) {
+        alert(`Max redeemable coins: ${customers[currentCustomer]}`);
+        return;
       }
 
-      summary += `\n\nSubtotal: ₹${subtotal.toFixed(2)}`;
-      summary += `\nGST (10%): ₹${gst.toFixed(2)}`;
-      summary += `\nFinal Amount: ₹${total.toFixed(2)}`;
-      summary += `\nRemaining Coins: ${currentUser.coins}`;
+      total -= redeem;
+      customers[currentCustomer] -= redeem;
 
-      document.getElementById("bill").textContent = summary;
+      const earnedCoins = Math.round(total * 0.05);
+      customers[currentCustomer] += earnedCoins;
+
+      billContent += `-----------------------------\nSubtotal: ₹${subtotal.toFixed(2)}\nGST (10%): ₹${gst.toFixed(2)}\nRedeemed: ₹${redeem}\n-----------------------------\nTotal: ₹${total.toFixed(2)}\nEarned Coins: +${earnedCoins}\nCoins Left: ${customers[currentCustomer]}\n-----------------------------\n   Thank you for shopping!\n`;
+
+      document.getElementById("bill").textContent = billContent;
+      updateWalletInfo();
     }
+
+    addProduct();
   </script>
 </body>
 </html>
